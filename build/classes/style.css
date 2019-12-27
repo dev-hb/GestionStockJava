@@ -1,0 +1,96 @@
+.gestion_label{
+    -fx-text-fill: white;
+    -fx-font-size : 30px;
+}
+
+.app_title{
+    -fx-text-fill: #fff;
+    -fx-font-size : 40px;
+}
+
+.buttons{
+    -fx-background-color: #2c2c54;
+    -fx-text-fill:white;
+    -fx-width:50px;
+}
+
+.buttons:hover{
+    -fx-background-color: #706fd3;
+    -fx-cursor: hand;
+}
+
+.right{
+    -fx-width:50px;
+}
+
+.custom_back{
+    -fx-background-color: #40407a;
+}
+
+.top_box_style{
+    -fx-background-color: #40407a;    
+}
+
+.button_box{
+    -fx-background-color: #474787;
+    -fx-text-fill:white;
+    -fx-font-size:20px;
+}
+
+.custom_message{
+    -fx-text-fill:white;
+}
+
+.default_message{
+    -fx-text-fill:"#ccc";
+}
+
+.flag{
+    -fx-text-fill:black;
+}
+
+.header_btn{
+    -fx-background-color: #2c2c54;
+    -fx-font-size:18px;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius:0;
+}
+.header_btn:hover{
+    -fx-background-color: #706fd3;
+    -fx-cursor: hand;
+}
+
+.btn_active{
+    -fx-background-color: #40407a;
+}
+
+.menu_buttons{
+    -fx-background-color: #2c2c54;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 20px;
+}
+
+.menu_buttons:hover{
+    -fx-background-color: #706fd3;
+    -fx-cursor: hand;
+}
+
+.center_elem, .magrid{
+    -fx-alignment: center;
+    -fx-padding: 10 ;
+    -fx-background-color: #40407a;
+}
+
+.bg_coloring {
+    -fx-background-color: #6a89cc;
+}
+
+.resteBox {
+    -fx-background-color: #40407a;
+}
+
+.resteLabels {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
