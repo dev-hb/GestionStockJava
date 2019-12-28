@@ -41,16 +41,14 @@ try{
 
     @Override
     public void create(Client c) {
-                try{      
-            String query = "INSERT INTO client VALUES(?,?,?,?,?)";
+         try{
+            String query = "INSERT INTO client (nom, prenom, adresse, ville) VALUES(?,?,?,?)";
             pstm = dc.conn.prepareStatement(query);
-            pstm.setInt(1, c.getId());
-            pstm.setString(2, c.getNom());
-            pstm.setString(3, c.getPrenom());
-            pstm.setString(4, c.getAdresse());
-            pstm.setString(5,c.getVille());
+            pstm.setString(1, c.getNom());
+            pstm.setString(2, c.getPrenom());
+            pstm.setString(3, c.getAdresse());
+            pstm.setString(4,c.getVille());
             int rows = pstm.executeUpdate();
-            System.out.println("Client inséré !");
         }catch(SQLException e){
             e.printStackTrace();
         }

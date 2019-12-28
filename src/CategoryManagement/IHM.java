@@ -2,6 +2,8 @@ package CategoryManagement;
 
 import java.util.List;
 import java.util.function.Predicate;
+
+import gestionstockjava.FormValidator;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.collections.FXCollections;
@@ -56,6 +58,7 @@ public class IHM extends Application {
 
     ObservableList<Category> listOfCategories;
     List<Category> categories;
+    FormValidator forms = new FormValidator("catégories");
 
     private void initPane() {
         this.bottom = new HBox();
@@ -213,39 +216,45 @@ public class IHM extends Application {
             return row;
         });
         addButton.setOnAction(e -> {
-            Category p = new Category(Integer.parseInt(idTextField.getText()), nameTextField.getText(), descTextField.getText());
-            System.out.println(p.getName());
-            dao.create(p);
-            clearFields();
-            this.statusLabel.setText("La catégorie est insérée avec succès !");
-            this.statusLabel.getStyleClass().add("custom_message");
-            updateListItems();
-
+            if(! forms.isEmptyFields(nameTextField, descTextField)){
+                Category p = new Category(0, nameTextField.getText(), descTextField.getText());
+                System.out.println(p.getName());
+                dao.create(p);
+                clearFields();
+                this.statusLabel.setText("La catégorie est insérée avec succès !");
+                this.statusLabel.getStyleClass().add("custom_message");
+                updateListItems();
+            }else{
+                forms.shout("Merci de remplir tous les champs");
+            }
         });
 
         editButton.setOnAction(e -> {
-
-            Category produtResult = dao.find(Integer.parseInt(idTextField.getText()));
-            dao.update(produtResult, nameTextField.getText(), descTextField.getText());
-            updateListItems();
-            clearFields();
-            this.statusLabel.setText("La catégorie est bien modifée !");
-            this.statusLabel.getStyleClass().add("custom_message");
+            if(! forms.isEmptyFields(idTextField, nameTextField, descTextField)){
+                Category produtResult = dao.find(Integer.parseInt(idTextField.getText()));
+                dao.update(produtResult, nameTextField.getText(), descTextField.getText());
+                updateListItems();
+                clearFields();
+                this.statusLabel.setText("La catégorie est bien modifée !");
+                this.statusLabel.getStyleClass().add("custom_message");
+            }else{
+                forms.shout("Merci de remplir tous les champs");
+            }
         });
 
         deleteButton.setOnAction(e -> {
-            Category rs = dao.find(Integer.parseInt(idTextField.getText()));
-            if (rs == null) {
-                this.statusLabel.setText("Oops ! Cette catégorie n'existe pas !");
-                this.statusLabel.getStyleClass().add("custom_message");
-            } else {
-
-                dao.delete(rs);
-                updateListItems();
-                clearFields();
-                this.statusLabel.setText("La catégorie est bien été supprimée !");
-                this.statusLabel.getStyleClass().add("custom_message");
-            }
+                if(! forms.isEmptyFields(idTextField)){
+                    if(forms.confirm("Êtes vous sûr de supprimer cette catégorie?")){
+                        Category rs = dao.find(Integer.parseInt(idTextField.getText()));
+                        dao.delete(rs);
+                        updateListItems();
+                        clearFields();
+                        this.statusLabel.setText("La catégorie est bien été supprimée !");
+                        this.statusLabel.getStyleClass().add("custom_message");
+                    }
+                }else{
+                    forms.shout("Séléctionner une catégorie à supprimer");
+                }
         });
         
         primaryStage.setTitle("Gestion des Catégories");

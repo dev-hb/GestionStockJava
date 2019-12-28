@@ -1,8 +1,11 @@
 package PaiementManagement;
 
+import SalesManagement.Vente;
 import SalesManagement.VenteDAOIMPL;
 import java.util.List;
 import java.util.function.Predicate;
+
+import gestionstockjava.FormValidator;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.collections.FXCollections;
@@ -61,7 +64,9 @@ public class IHM extends Application {
     List<Paiement> paiements;
     
     int idVenteFromSales;
-    
+
+    FormValidator forms = new FormValidator("paiements");
+
     public IHM(int idVenteFromSales){
         this.idVenteFromSales = idVenteFromSales;
     }
@@ -71,9 +76,9 @@ public class IHM extends Application {
         for(Paiement p : paiements) paid += p.getMontant();
         total = (new VenteDAOIMPL()).find(idVenteFromSales).getTotal();
         reste = total - paid;
-        this.totalValueLabel.setText(Double.toString(total) + " Dh");
-        this.paidValueLabel.setText(Double.toString(paid) + " Dh");
-        this.resteValueLabel.setText(Double.toString(reste) + " Dh");
+        this.totalValueLabel.setText(Double.toString(total));
+        this.paidValueLabel.setText(Double.toString(paid));
+        this.resteValueLabel.setText(Double.toString(reste));
     }
 
     public void initPane() {
@@ -103,7 +108,9 @@ public class IHM extends Application {
         this.idTextField.setDisable(true);
         this.montantTextField = new TextField();
         this.dateTextField = new TextField();
+        this.dateTextField.setPromptText("jj/mm/aaaa");
         this.dateEffetTextField = new TextField();
+        this.dateEffetTextField.setPromptText("jj/mm/aaaa");
         this.proprietaireTextField = new TextField();
         this.typesBox = new ComboBox<>();
         this.addButton = new Button("Ajouter");
@@ -294,45 +301,79 @@ public class IHM extends Application {
         });
 
         addButton.setOnAction(e -> {
-            Paiement p = new Paiement(
-                    (new VenteDAOIMPL()).find(Integer.parseInt(idVenteTextField.getText())),
-                    Double.parseDouble(montantTextField.getText()),
-                    dateTextField.getText(),
-                    proprietaireTextField.getText(),
-                    dateEffetTextField.getText(),
-                    typesBox.getSelectionModel().getSelectedItem()
-            );
-            dao.create(p);
-            clearFields();
-            this.statusLabel.setText("Le paiement a été ajouté avec succès!");
-            this.statusLabel.getStyleClass().add("custom_message");
-            updateListItems();
-            initRest(paiements);
+            if(! forms.isEmptyFields(dateTextField, dateEffetTextField, proprietaireTextField, montantTextField) && typesBox.getValue() != null){
+                double paid, total, montant;
+                paid = Double.parseDouble(paidValueLabel.getText());
+                total = Double.parseDouble(totalValueLabel.getText());
+                montant = Double.parseDouble(montantTextField.getText());
+                if(paid < total){
+                    if((montant + paid) <= total ){
+                        Paiement p = new Paiement(
+                                (new VenteDAOIMPL()).find(Integer.parseInt(idVenteTextField.getText())),
+                                Double.parseDouble(montantTextField.getText()),
+                                dateTextField.getText(),
+                                proprietaireTextField.getText(),
+                                dateEffetTextField.getText(),
+                                typesBox.getSelectionModel().getSelectedItem()
+                        );
+                        dao.create(p);
+                        clearFields();
+                        this.statusLabel.setText("Le paiement a été ajouté avec succès!");
+                        this.statusLabel.getStyleClass().add("custom_message");
+                        updateListItems();
+                        initRest(paiements);
+                    }else{
+                        forms.shout("Vous avez dépassé le montant total de la vente!");
+                    }
+                }else{
+                    forms.shout("Cette vente est déja réglé");
+                }
+            }else{
+                forms.shout("Merci de remplir tous les champs");
+            }
         });
 
         editButton.setOnAction(e -> {
-            Paiement p = (new PaiementDAOIMPL()).find(Integer.parseInt(idTextField.getText()));
-            p.setMontant(Double.parseDouble(montantTextField.getText()));
-            p.setDate(dateTextField.getText());
-            p.setProprietaire(proprietaireTextField.getText());
-            p.setDateEffet(dateEffetTextField.getText());
-            p.setType(typesBox.getSelectionModel().getSelectedItem());
-            dao.update(p);
-            clearFields();
-            this.statusLabel.setText("Le paiement est bien modifée !");
-            this.statusLabel.getStyleClass().add("custom_message");
-            updateListItems();
-            initRest(paiements);
+            if(! forms.isEmptyFields(idTextField, dateTextField, dateEffetTextField, montantTextField, proprietaireTextField) && typesBox.getValue() != null){
+                double paid, total, montant;
+                paid = Double.parseDouble(paidValueLabel.getText());
+                total = Double.parseDouble(totalValueLabel.getText());
+                montant = Double.parseDouble(montantTextField.getText());
+                if((montant + (paid - table.getSelectionModel().getSelectedItem().getMontant())) <= total ){
+                    Paiement p = (new PaiementDAOIMPL()).find(Integer.parseInt(idTextField.getText()));
+                    p.setMontant(Double.parseDouble(montantTextField.getText()));
+                    p.setDate(dateTextField.getText());
+                    p.setProprietaire(proprietaireTextField.getText());
+                    p.setDateEffet(dateEffetTextField.getText());
+                    p.setType(typesBox.getSelectionModel().getSelectedItem());
+                    dao.update(p);
+                    clearFields();
+                    this.statusLabel.setText("Le paiement est bien modifée !");
+                    this.statusLabel.getStyleClass().add("custom_message");
+                    updateListItems();
+                    initRest(paiements);
+                }else{
+                    forms.shout("Vous avez dépassé le montant total de la vente!");
+                }
+            }else{
+                forms.shout("Merci de séléctionner un paiement et remplir tous les champs");
+            }
         });
 
         deleteButton.setOnAction(e -> {
-            Paiement p = (new PaiementDAOIMPL()).find(Integer.parseInt(idTextField.getText()));
-            dao.delete(p);
-            clearFields();
-            this.statusLabel.setText("Le paiement est bien supprimé !");
-            this.statusLabel.getStyleClass().add("custom_message");
-            updateListItems();
-            initRest(paiements);
+            if(! forms.isEmptyFields(idTextField)){
+                if(forms.confirm("Êtes vous sûr de supprimer ce paiement?")){
+                    Paiement p = (new PaiementDAOIMPL()).find(Integer.parseInt(idTextField.getText()));
+                    dao.delete(p);
+                    clearFields();
+                    this.statusLabel.setText("Le paiement est bien supprimé !");
+                    this.statusLabel.getStyleClass().add("custom_message");
+                    updateListItems();
+                    initRest(paiements);
+                }
+            }else{
+                forms.shout("Merci de séléctionner un paiement à supprimer");
+            }
         });
 
         primaryStage.setTitle("Gestion des paiements");

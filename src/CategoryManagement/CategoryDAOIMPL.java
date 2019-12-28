@@ -45,14 +45,11 @@ public class CategoryDAOIMPL implements CategoryDAO {
     @Override
     public void create(Category ca) {
         try {
-            String query = "INSERT INTO categorie VALUES(?,?,?)";
+            String query = "INSERT INTO categorie (name, description) VALUES(?,?)";
             pstm = dc.conn.prepareStatement(query);
-
-            pstm.setLong(1, ca.getId());
-            pstm.setString(2, ca.getName());
-            pstm.setString(3, ca.getDescription());
+            pstm.setString(1, ca.getName());
+            pstm.setString(2, ca.getDescription());
             int rows = pstm.executeUpdate();
-            System.out.println("Catégorie insérée !");
         } catch (SQLException e) {
             e.printStackTrace();
         }

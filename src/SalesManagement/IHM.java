@@ -5,6 +5,8 @@ import ClientManagement.ClientDAOIMPL;
 import ProductManagement.Product;
 import ProductManagement.ProductDAOIMPL;
 import java.util.List;
+
+import gestionstockjava.FormValidator;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.collections.FXCollections;
@@ -130,6 +132,7 @@ public class IHM extends Application {
         this.gestionLabel = new Label("Gestion de ventes");
         this.idTextField = new TextField();
         this.dateTextField = new TextField();
+        this.dateTextField.setPromptText("jj/mm/aaaa");
         this.clientComboBox = new ComboBox<>();
 
         this.addButton = new Button("Ajouter");
@@ -369,19 +372,21 @@ public class IHM extends Application {
 
         deleteButton.setOnAction(e -> {
             if (table.getSelectionModel().getSelectedIndex() >= 0) {
-                int beforeSelected = table.getSelectionModel().getSelectedIndex() - 1;
-                Vente rs = dao.find(Integer.parseInt(idTextField.getText()));
-                dao.delete(rs);
-                updateListItems();
-                if (beforeSelected != 0) {
-                    table.getSelectionModel().select(beforeSelected);
-                } else {
-                    table.getSelectionModel().select(0);
+                if((new FormValidator("ventes")).confirm("Êtes vous sûr de supprimer cette vente?")){
+                    int beforeSelected = table.getSelectionModel().getSelectedIndex() - 1;
+                    Vente rs = dao.find(Integer.parseInt(idTextField.getText()));
+                    dao.delete(rs);
+                    updateListItems();
+                    if (beforeSelected != 0) {
+                        table.getSelectionModel().select(beforeSelected);
+                    } else {
+                        table.getSelectionModel().select(0);
+                    }
+                    refrechLigneTable(beforeSelected);
+                    clearFields();
+                    this.statusLabel.setText("La vente est bien été supprimé !");
+                    this.statusLabel.getStyleClass().add("custom_message");
                 }
-                refrechLigneTable(beforeSelected);
-                clearFields();
-                this.statusLabel.setText("La vente est bien été supprimé !");
-                this.statusLabel.getStyleClass().add("custom_message");
             } else {
                 alert.setContentText("Sélectionner une vente pour la supprimer");
                 alert.showAndWait();
@@ -442,13 +447,15 @@ public class IHM extends Application {
 
         deleteLigne.setOnAction(e -> {
             if (ligneTable.getSelectionModel().getSelectedIndex() >= 0) {
-                int idvente = ligneTable.getSelectionModel().getSelectedItem().getId();
-                LigneVente lv = daoLigne.find(idvente);
-                daoLigne.delete(lv);
-                refrechLigneTable(idvente);
-                clearLigneFields();
-                this.statusLabel.setText("La ligne de vente a été supprimé !");
-                this.statusLabel.getStyleClass().add("custom_message");
+                if((new FormValidator("ventes")).confirm("Êtes vous sûr de supprimer cette ligne de vente?")){
+                    int idvente = ligneTable.getSelectionModel().getSelectedItem().getId();
+                    LigneVente lv = daoLigne.find(idvente);
+                    daoLigne.delete(lv);
+                    refrechLigneTable(idvente);
+                    clearLigneFields();
+                    this.statusLabel.setText("La ligne de vente a été supprimé !");
+                    this.statusLabel.getStyleClass().add("custom_message");
+                }
             } else {
                 alert.setContentText("Veuillez séléctionner une ligne de vente");
                 alert.showAndWait();

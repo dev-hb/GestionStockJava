@@ -57,14 +57,12 @@ public class ProductDAOIMPL implements ProductDAO {
     try{      
         
             
-            String query = "INSERT INTO produit VALUES(?,?,?,?)";
+            String query = "INSERT INTO produit (designation, prix, catid) VALUES(?,?,?)";
             pstm = dc.conn.prepareStatement(query);
-            
-            pstm.setInt(1,p.getId());
-            pstm.setString(2, p.getDesignation());
-            pstm.setDouble(3, p.getPrix());
+            pstm.setString(1, p.getDesignation());
+            pstm.setDouble(2, p.getPrix());
             int id = p.getCatid().getId();
-            pstm.setInt(4, id);
+            pstm.setInt(3, id);
              int rows = pstm.executeUpdate();
              System.out.println("Produit inséré !");
         }catch(SQLException e){

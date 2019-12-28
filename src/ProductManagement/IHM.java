@@ -3,6 +3,8 @@ package ProductManagement;
 import CategoryManagement.Category;
 import java.util.List;
 import java.util.function.Predicate;
+
+import gestionstockjava.FormValidator;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -65,6 +67,8 @@ public class IHM extends Application {
 
     ObservableList<Product> listOfProducts;
     List<Product> products;
+
+    FormValidator forms = new FormValidator("produits");
 
     private void initPane() {
         this.bottom = new HBox();
@@ -237,37 +241,41 @@ public class IHM extends Application {
         table.setItems(sortedProducts);
 
         addButton.setOnAction(e -> {
-            Product p = new Product(Integer.parseInt(idTextField.getText()), desTextField.getText(), Double.parseDouble(prixTextField.getText()), categorieComboBox.getValue());
-
-            dao.create(p);
-            clearFields();
-
-            this.statusLabel.setText("Le produit est inséré avec succès !");
-            this.statusLabel.getStyleClass().add("custom_message");
-            updateListItems();
-
+            if(! forms.isEmptyFields(desTextField, prixTextField) && categorieComboBox.getValue() != null){
+                Product p = new Product(0, desTextField.getText(), Double.parseDouble(prixTextField.getText()), categorieComboBox.getValue());
+                dao.create(p);
+                clearFields();
+                this.statusLabel.setText("Le produit est inséré avec succès !");
+                this.statusLabel.getStyleClass().add("custom_message");
+                updateListItems();
+            }else{
+                forms.shout("Merci de remplir tous les champs");
+            }
         });
 
         editButton.setOnAction(e -> {
-
-            Product produtResult = dao.find(Integer.parseInt(idTextField.getText()));
-            dao.update(produtResult, desTextField.getText(), Double.parseDouble(prixTextField.getText()), categorieComboBox.getValue());
-            updateListItems();
-            clearFields();
-            this.statusLabel.setText("Le produit est bien modifé !");
-
+            if(! forms.isEmptyFields(idTextField, desTextField, prixTextField) && categorieComboBox.getValue() != null){
+                Product produtResult = dao.find(Integer.parseInt(idTextField.getText()));
+                dao.update(produtResult, desTextField.getText(), Double.parseDouble(prixTextField.getText()), categorieComboBox.getValue());
+                updateListItems();
+                clearFields();
+                this.statusLabel.setText("Le produit est bien modifé !");
+            }else{
+                forms.shout("Merci de séléctionner un produit et remplir tous les champs");
+            }
         });
 
         deleteButton.setOnAction(e -> {
-            Product rs = dao.find(Integer.parseInt(idTextField.getText()));
-            if (rs == null) {
-                this.statusLabel.setText("Oops ! Ce produit n'existe pas !");
-            } else {
-
-                dao.delete(rs);
-                updateListItems();
-                clearFields();
-                this.statusLabel.setText("Le produit est bien été supprimé !");
+            if(! forms.isEmptyFields(idTextField)){
+                if(forms.confirm("Êtes vous sûr de supprimer c produit?")){
+                    Product rs = dao.find(Integer.parseInt(idTextField.getText()));
+                    dao.delete(rs);
+                    updateListItems();
+                    clearFields();
+                    this.statusLabel.setText("Le produit est bien été supprimé !");
+                }
+            }else{
+                forms.shout("Merci de séléctionner un produit à supprimer");
             }
         });
 

@@ -41,7 +41,7 @@ public class PaiementDAOIMPL implements PaiementDAO {
                 do {
                     Vente v = daoVente.find(rs.getInt("id_vente"));
                     TypePaiement t = daoType.find(rs.getInt("id_type"));
-                    flag = new Paiement(id, v, rs.getDouble("montant"), rs.getString("date"), rs.getString("proprietaire"),
+                    flag = new Paiement(id, v, rs.getDouble("montant"), rs.getString("paiement.date"), rs.getString("proprietaire"),
                             rs.getString("dateEffet"), t);
                 } while (rs.next());
                 return flag;
@@ -115,7 +115,7 @@ public class PaiementDAOIMPL implements PaiementDAO {
             rs = pstm.executeQuery();
             Paiement v;
             while (rs.next()) {
-                v = new Paiement(rs.getInt("paiement.id"), daoVente.find(rs.getInt("id_vente")), rs.getDouble("montant"), rs.getString("date"),
+                v = new Paiement(rs.getInt("paiement.id"), daoVente.find(rs.getInt("id_vente")), rs.getDouble("montant"), rs.getString("paiement.date"),
                                 rs.getString("proprietaire"), rs.getString("dateEffet"), daoType.find(rs.getInt("id_type")));
                 list.add(v);
             }

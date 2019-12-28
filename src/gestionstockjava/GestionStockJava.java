@@ -6,6 +6,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 public class GestionStockJava extends Application {
 
     Pane root = new Pane();
@@ -97,10 +100,11 @@ public class GestionStockJava extends Application {
         
         scene.getStylesheets().add("style.css");
         window.setScene(scene);
+
         window.show();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
         launch(args);
     }
 }
