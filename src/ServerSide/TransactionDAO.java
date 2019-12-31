@@ -4,13 +4,13 @@ import java.util.List;
 
 public interface TransactionDAO {
 
-    public TransactionDAO find(int id);
+    public Transaction find(int id);
 
-    public void create(TransactionDAO p);
+    public void create(Transaction p);
 
-    public void delete(TransactionDAO p);
+    public void delete(Transaction p);
 
-    public void update(TransactionDAO p);
+    public void update(Transaction p);
 
-    public List<TransactionDAO> findAll();
+    public List<Transaction> findAll();
 }

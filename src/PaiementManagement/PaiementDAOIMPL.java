@@ -6,6 +6,7 @@ import SalesManagement.VenteDAOIMPL;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +57,6 @@ public class PaiementDAOIMPL implements PaiementDAO {
     @Override
     public void create(Paiement p) {
         try {
-
             String query = "INSERT INTO paiement (id_vente, montant, date, proprietaire, dateEffet, id_type) VALUES(?,?,?,?,?,?)";
             pstm = dc.conn.prepareStatement(query);
             pstm.setInt(1, p.getVente().getId());
@@ -66,6 +66,10 @@ public class PaiementDAOIMPL implements PaiementDAO {
             pstm.setString(5, p.getDateEffet());
             pstm.setInt(6, p.getType().getId());
             int rows = pstm.executeUpdate();
+            Statement st = dc.conn.createStatement();
+            ResultSet rs = st.executeQuery("SELECT id FROM paiement ORDER BY id DESC LIMIT 1");
+            rs.next();
+            p.setId( rs.getInt("id") );
         } catch (SQLException e) {
             e.printStackTrace();
         }

@@ -2,9 +2,14 @@ package PaiementManagement;
 
 import SalesManagement.Vente;
 import SalesManagement.VenteDAOIMPL;
+
+import java.io.*;
+import java.net.Socket;
 import java.util.List;
+import java.util.Scanner;
 import java.util.function.Predicate;
 
+import ServerSide.Transaction;
 import gestionstockjava.FormValidator;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
@@ -253,6 +258,38 @@ public class IHM extends Application {
         this.typesBox.setValue(null);
     }
 
+    public void savePaiement(Paiement p){
+        dao.create(p);
+        clearFields();
+        this.statusLabel.setText("Le paiement a été ajouté avec succès!");
+        this.statusLabel.getStyleClass().add("custom_message");
+        updateListItems();
+        initRest(paiements);
+    }
+
+    public void sendPaiement(Paiement p){
+        Transaction transaction = new Transaction(1, p, "10/05/2019");
+        try {
+            Socket client = new Socket("localhost", 1997);
+            PrintStream ps = new PrintStream(client.getOutputStream());
+            ps.println(Double.toString(p.getMontant()));
+            ps.flush();
+            Scanner sc = new Scanner(client.getInputStream());
+            String response = sc.nextLine();
+            if(response.equals("ok")){
+                savePaiement(p);
+                // send the transaction's information to the Server
+                ObjectOutputStream objout = new ObjectOutputStream(client.getOutputStream());
+                objout.writeObject(transaction);
+                objout.flush();
+            }else{
+                forms.shout("Sold insuffisant !!");
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     @Override
     public void start(Stage primaryStage) {
         this.dao = new PaiementDAOIMPL();
@@ -316,12 +353,11 @@ public class IHM extends Application {
                                 dateEffetTextField.getText(),
                                 typesBox.getSelectionModel().getSelectedItem()
                         );
-                        dao.create(p);
-                        clearFields();
-                        this.statusLabel.setText("Le paiement a été ajouté avec succès!");
-                        this.statusLabel.getStyleClass().add("custom_message");
-                        updateListItems();
-                        initRest(paiements);
+                        if(typesBox.getSelectionModel().getSelectedItem().getName().equals("Online")){
+                            sendPaiement(p);
+                        }else{
+                            savePaiement(p);
+                        }
                     }else{
                         forms.shout("Vous avez dépassé le montant total de la vente!");
                     }

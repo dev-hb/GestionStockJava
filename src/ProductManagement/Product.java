@@ -2,7 +2,9 @@ package ProductManagement;
 
 import CategoryManagement.Category;
 
-public class Product {
+import java.io.Serializable;
+
+public class Product implements Serializable {
     private int id;
     private String designation;
     private double prix;

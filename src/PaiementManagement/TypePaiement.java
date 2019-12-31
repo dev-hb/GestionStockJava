@@ -1,6 +1,8 @@
 package PaiementManagement;
 
-public class TypePaiement {
+import java.io.Serializable;
+
+public class TypePaiement implements Serializable {
     private int id;
     private String name;
 

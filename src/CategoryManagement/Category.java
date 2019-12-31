@@ -2,12 +2,14 @@ package CategoryManagement;
 
 import ProductManagement.Product;
 import ProductManagement.ProductDAOIMPL;
+
+import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Category {
+public class Category implements Serializable {
     private int id;
     private String name;
     private String description;

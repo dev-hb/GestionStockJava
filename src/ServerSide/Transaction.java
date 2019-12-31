@@ -1,13 +1,17 @@
 package ServerSide;
 
-public class Transaction {
+import PaiementManagement.Paiement;
+
+import java.io.Serializable;
+
+public class Transaction implements Serializable {
     private int id;
-    private Bank bank;
+    private Paiement paiement;
     private String date;
 
-    public Transaction(int id, Bank bank, String date) {
+    public Transaction(int id, Paiement paiement, String date) {
         this.id = id;
-        this.bank = bank;
+        this.paiement = paiement;
         this.date = date;
     }
 
@@ -19,12 +23,12 @@ public class Transaction {
         this.id = id;
     }
 
-    public Bank getBank() {
-        return bank;
+    public Paiement getPaiement() {
+        return paiement;
     }
 
-    public void setBank(Bank bank) {
-        this.bank = bank;
+    public void setPaiement(Paiement paiement) {
+        this.paiement = paiement;
     }
 
     public String getDate() {
@@ -39,7 +43,7 @@ public class Transaction {
     public String toString() {
         return "Transaction{" +
                 "id=" + id +
-                ", bank=" + bank +
+                ", paiement=" + paiement +
                 ", date='" + date + '\'' +
                 '}';
     }
