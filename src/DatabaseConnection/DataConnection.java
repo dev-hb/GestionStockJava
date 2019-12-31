@@ -10,7 +10,7 @@ public class DataConnection {
     private DataConnection(){
         try{
             String url = "jdbc:mysql://localhost:3306/exam?serverTimezone=Africa/Casablanca";
-            conn = DriverManager.getConnection(url , "root" ,"");
+            conn = DriverManager.getConnection(url , "root" ,"hba7222000");
         }catch(SQLException e){
            e.printStackTrace();
         }
