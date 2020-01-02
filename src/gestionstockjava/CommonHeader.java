@@ -4,12 +4,16 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+import java.net.Socket;
+
 public class CommonHeader {
     private String activeWindow;
     private Stage window;
     Pane root = new Pane();
     HBox links;
     Button categories, products, clients, ventes;
+    Label stateLabel;
     
     public CommonHeader(Stage window, String activeWindow){
         this.activeWindow = activeWindow;
@@ -22,13 +26,19 @@ public class CommonHeader {
         products = new Button("Produits");
         clients = new Button("Clients");
         ventes = new Button("Ventes");
+        stateLabel = new Label();
     }
-    
+
+    public Label getStateLabel() {
+        return stateLabel;
+    }
+
     public void applyStyles(){
         this.categories.getStyleClass().add("header_btn");
         this.products.getStyleClass().add("header_btn");
         this.clients.getStyleClass().add("header_btn");
         this.ventes.getStyleClass().add("header_btn");
+        this.stateLabel.getStyleClass().add("server_state");
         
         if(this.activeWindow.equals("category")){
             this.categories.getStyleClass().add("btn_active");
@@ -65,7 +75,10 @@ public class CommonHeader {
     
     public void draw(){
         links.getChildren().addAll(categories, products, clients, ventes);
-        root.getChildren().add(links);
+        BorderPane bp = new BorderPane();
+        bp.setLeft(links);
+        bp.setRight(new HBox(stateLabel));
+        root.getChildren().add(bp);
     }
 
     public Pane getHeader(){

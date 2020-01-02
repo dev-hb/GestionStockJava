@@ -4,6 +4,10 @@ import ClientManagement.Client;
 import ClientManagement.ClientDAOIMPL;
 import ProductManagement.Product;
 import ProductManagement.ProductDAOIMPL;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import gestionstockjava.FormValidator;
@@ -52,9 +56,11 @@ public class IHM extends Application {
     TextField idTextField;
     ComboBox<Client> clientComboBox;
     ComboBox<Product> productsBox;
-    TextField dateTextField;
+    DatePicker dateTextField;
     TextField cityTextField;
     TextField qteTextField;
+
+    DateTimeFormatter formatter;
 
     // Les buttons
     Button addButton;
@@ -128,10 +134,12 @@ public class IHM extends Application {
         qteLigneColumn = new TableColumn<>("Quantité");
         totalLigneColumn = new TableColumn<>("Total");
 
+        this.formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         this.statusLabel = new Label();
         this.gestionLabel = new Label("Gestion de ventes");
         this.idTextField = new TextField();
-        this.dateTextField = new TextField();
+        this.dateTextField = new DatePicker();
+        this.dateTextField.setEditable(false);
         this.dateTextField.setPromptText("jj/mm/aaaa");
         this.clientComboBox = new ComboBox<>();
 
@@ -266,7 +274,7 @@ public class IHM extends Application {
 
     public void clearFields() {
         this.idTextField.setText("");
-        this.dateTextField.setText("");
+        this.dateTextField.setValue(null);
         this.clientComboBox.setValue(null);
     }
 
@@ -317,7 +325,7 @@ public class IHM extends Application {
                 if (event.getClickCount() == 1 && (!row.isEmpty())) {
                     Vente rowData = row.getItem();
                     idTextField.setText(Long.toString(rowData.getId()));
-                    dateTextField.setText(rowData.getDate());
+                    dateTextField.setValue(LocalDate.parse(rowData.getDate(), formatter));
                     clientComboBox.setValue(rowData.getClient());
                     refrechLigneTable(rowData.getId());
                 }
@@ -338,10 +346,10 @@ public class IHM extends Application {
         });
 
         addButton.setOnAction(e -> {
-            if (clientComboBox.getValue() != null && !dateTextField.getText().equals("")) {
+            if (clientComboBox.getValue() != null && dateTextField.getValue()!=null) {
                 Vente v = new Vente(0,
                         clientComboBox.getSelectionModel().getSelectedItem(),
-                        dateTextField.getText());
+                        dateTextField.getValue().format(formatter));
                 dao.create(v);
                 clearFields();
                 this.statusLabel.setText("La vente est inséré avec succès !");
@@ -357,7 +365,7 @@ public class IHM extends Application {
             if (table.getSelectionModel().getSelectedIndex() >= 0) {
                 Vente venteToEdit = dao.find(Integer.parseInt(idTextField.getText()));
                 venteToEdit.setClient((Client) clientComboBox.getSelectionModel().getSelectedItem());
-                venteToEdit.setDate(dateTextField.getText());
+                venteToEdit.setDate(dateTextField.getValue().format(formatter));
                 dao.update(venteToEdit);
                 updateListItems();
                 clearFields();
@@ -395,30 +403,38 @@ public class IHM extends Application {
 
         addLigne.setOnAction(e -> {
             if (table.getSelectionModel().getSelectedIndex() >= 0) {
+                boolean isNumber = false;
+                try{ Integer.parseInt(qteTextField.getText()); isNumber=true; }
+                catch(NumberFormatException ex){}
                 existLigneVente = null;
-                if (productsBox.getValue() != null && !qteTextField.getText().equals("")) {
-                    int idvente = table.getSelectionModel().getSelectedItem().getId();
-                    LigneVente lv = new LigneVente(0, dao.find(idvente),
-                            productsBox.getSelectionModel().getSelectedItem(),
-                            Integer.parseInt(qteTextField.getText()));
+                if(isNumber){
+                    if (productsBox.getValue() != null && !qteTextField.getText().equals("")) {
+                        int idvente = table.getSelectionModel().getSelectedItem().getId();
+                        LigneVente lv = new LigneVente(0, dao.find(idvente),
+                                productsBox.getSelectionModel().getSelectedItem(),
+                                Integer.parseInt(qteTextField.getText()));
 
-                    ligneTable.getItems().forEach(item -> {
-                        if (item.getProduit().getId() == lv.getProduit().getId() && item.getVente().getId() == lv.getVente().getId()) {
-                            existLigneVente = item;
+                        ligneTable.getItems().forEach(item -> {
+                            if (item.getProduit().getId() == lv.getProduit().getId() && item.getVente().getId() == lv.getVente().getId()) {
+                                existLigneVente = item;
+                            }
+                        });
+                        if (existLigneVente == null) {
+                            daoLigne.create(lv);
+                        } else {
+                            existLigneVente.setQte(existLigneVente.getQte() + lv.getQte());
+                            daoLigne.update(existLigneVente);
                         }
-                    });
-                    if (existLigneVente == null) {
-                        daoLigne.create(lv);
+                        refrechLigneTable(idvente);
+                        clearLigneFields();
+                        this.statusLabel.setText("La ligne de vente a été ajouté !");
+                        this.statusLabel.getStyleClass().add("custom_message");
                     } else {
-                        existLigneVente.setQte(existLigneVente.getQte() + lv.getQte());
-                        daoLigne.update(existLigneVente);
+                        alert.setContentText("Sélectionner un produit et définir une quantité");
+                        alert.showAndWait();
                     }
-                    refrechLigneTable(idvente);
-                    clearLigneFields();
-                    this.statusLabel.setText("La ligne de vente a été ajouté !");
-                    this.statusLabel.getStyleClass().add("custom_message");
-                } else {
-                    alert.setContentText("Sélectionner un produit et définir une quantité");
+                }else{
+                    alert.setContentText("La quantité que vous avez entré n\'est pas valide!");
                     alert.showAndWait();
                 }
             } else {
@@ -466,7 +482,8 @@ public class IHM extends Application {
             if (table.getSelectionModel().getSelectedIndex() >= 0) {
                 if (table.getSelectionModel().getSelectedItem().getTotal() > 0) {
                     int idvente = table.getSelectionModel().getSelectedItem().getId();
-                    PaiementManagement.IHM paiementIHM = new PaiementManagement.IHM(Integer.parseInt(idTextField.getText()));
+                    PaiementManagement.IHM paiementIHM = null;
+                    paiementIHM = new PaiementManagement.IHM(Integer.parseInt(idTextField.getText()));
                     paiementIHM.start(primaryStage);
                 } else {
                     alert.setContentText("Aucune ligne de vente trouvé");

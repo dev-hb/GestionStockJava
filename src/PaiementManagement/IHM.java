@@ -1,18 +1,26 @@
 package PaiementManagement;
 
-import SalesManagement.Vente;
 import SalesManagement.VenteDAOIMPL;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
 import java.util.function.Predicate;
 
+import ServerSide.Server;
 import ServerSide.Transaction;
+import gestionstockjava.CommonHeader;
 import gestionstockjava.FormValidator;
 import javafx.application.Application;
+
 import static javafx.application.Application.launch;
+
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -20,18 +28,9 @@ import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 public class IHM extends Application {
@@ -47,7 +46,9 @@ public class IHM extends Application {
     private TextField searchTextField;
     Label gestionLabel;
     Label idVenteLabel, idLabel, montantLabel, dateLabel, proprietaireLabel, dateEffetLabel, typeLabel;
-    TextField idVenteTextField, idTextField, montantTextField, dateTextField, proprietaireTextField, dateEffetTextField;
+    TextField idVenteTextField, idTextField, montantTextField, proprietaireTextField;
+    DatePicker dateTextField, dateEffetTextField;
+    DateTimeFormatter formatter;
     ComboBox<TypePaiement> typesBox;
     Button addButton;
     Button editButton;
@@ -57,7 +58,7 @@ public class IHM extends Application {
     Label resteLabel, resteValueLabel, paidLabel, paidValueLabel, totalLabel, totalValueLabel;
     // Attributs de la table view
     TableView<Paiement> table;
-    // Les columns   
+    // Les columns
     TableColumn<Paiement, Integer> idColumn;
     TableColumn<Paiement, Double> montantColumn;
     TableColumn<Paiement, String> dateColumn;
@@ -67,18 +68,35 @@ public class IHM extends Application {
 
     ObservableList<Paiement> listOfPaiements;
     List<Paiement> paiements;
-    
+
     int idVenteFromSales;
 
     FormValidator forms = new FormValidator("paiements");
 
-    public IHM(int idVenteFromSales){
+    CommonHeader header;
+    Socket client = null;
+
+    MyThread detector;
+    boolean serverState = false;
+
+    public IHM(int idVenteFromSales) {
         this.idVenteFromSales = idVenteFromSales;
+        detector = new MyThread();
+        detector.setServerDetected((socket) -> {
+            System.out.println(socket);
+            client = socket;
+            if (socket == null) serverState = false;
+            else serverState = true;
+            Platform.runLater(() -> {
+                setServerState(serverState);
+            });
+        });
+        detector.start();
     }
-    
-    public void initRest(List<Paiement> paiements){
+
+    public void initRest(List<Paiement> paiements) {
         double total, paid = 0, reste;
-        for(Paiement p : paiements) paid += p.getMontant();
+        for (Paiement p : paiements) paid += p.getMontant();
         total = (new VenteDAOIMPL()).find(idVenteFromSales).getTotal();
         reste = total - paid;
         this.totalValueLabel.setText(Double.toString(total));
@@ -107,14 +125,16 @@ public class IHM extends Application {
         this.statusLabel = new Label();
         this.gestionLabel = new Label("Gestion des paiements");
         this.idVenteLabel = new Label("Id vente");
-        this.idVenteTextField = new TextField(idVenteFromSales+"");
+        this.idVenteTextField = new TextField(idVenteFromSales + "");
         this.idVenteTextField.setDisable(true);
         this.idTextField = new TextField();
         this.idTextField.setDisable(true);
         this.montantTextField = new TextField();
-        this.dateTextField = new TextField();
+        this.dateTextField = new DatePicker();
         this.dateTextField.setPromptText("jj/mm/aaaa");
-        this.dateEffetTextField = new TextField();
+        this.dateEffetTextField = new DatePicker();
+        this.dateTextField.setEditable(false);
+        this.dateEffetTextField.setEditable(false);
         this.dateEffetTextField.setPromptText("jj/mm/aaaa");
         this.proprietaireTextField = new TextField();
         this.typesBox = new ComboBox<>();
@@ -132,7 +152,8 @@ public class IHM extends Application {
         this.totalValueLabel = new Label();
         this.paidLabel = new Label("  Payé :  ");
         this.paidValueLabel = new Label();
-        boxTop.getChildren().addAll(gestionLabel,(new gestionstockjava.CommonHeader(window, "payement")).getHeader());
+        this.header = new gestionstockjava.CommonHeader(window, "payement");
+        boxTop.getChildren().addAll(gestionLabel, header.getHeader());
         boxTop.setAlignment(Pos.CENTER);
 
         leftBox.getChildren().addAll(addButton, editButton, deleteButton);
@@ -180,7 +201,7 @@ public class IHM extends Application {
         leftBox.setPadding(new Insets(10));
         boxTop.getStyleClass().add("top_box_style");
         leftBox.getStyleClass().add("custom_back");
-        
+
         GridPane resteBox = (new GridPane());
         resteBox.add(totalLabel, 0, 0);
         resteBox.add(totalValueLabel, 1, 0);
@@ -191,14 +212,14 @@ public class IHM extends Application {
         resteBox.getStyleClass().add("resteBox");
         resteBox.setHgap(20);
         resteBox.setVgap(27);
-        
+
         totalLabel.getStyleClass().add("resteLabels");
         totalValueLabel.getStyleClass().add("resteLabels");
         paidLabel.getStyleClass().add("resteLabels");
         paidValueLabel.getStyleClass().add("resteLabels");
         resteLabel.getStyleClass().add("resteLabels");
         resteValueLabel.getStyleClass().add("resteLabels");
-        
+
         this.centerBox.getChildren().addAll(centerPane, resteBox);
 
         this.bottom.getChildren().add(statusLabel);
@@ -217,6 +238,7 @@ public class IHM extends Application {
         listOfPaiements = getPaiementsList();
         root.getStyleClass().add("bg_coloring");
 
+        this.formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         initRest(paiements);
     }
 
@@ -252,13 +274,13 @@ public class IHM extends Application {
     public void clearFields() {
         this.idTextField.setText("");
         this.montantTextField.setText("");
-        this.dateTextField.setText("");
+        this.dateTextField.setValue(null);
         this.proprietaireTextField.setText("");
-        this.dateEffetTextField.setText("");
+        this.dateEffetTextField.setValue(null);
         this.typesBox.setValue(null);
     }
 
-    public void savePaiement(Paiement p){
+    public void savePaiement(Paiement p) {
         dao.create(p);
         clearFields();
         this.statusLabel.setText("Le paiement a été ajouté avec succès!");
@@ -267,26 +289,24 @@ public class IHM extends Application {
         initRest(paiements);
     }
 
-    public void sendPaiement(Paiement p){
-        Transaction transaction = new Transaction(1, p, "10/05/2019");
-        try {
-            Socket client = new Socket("localhost", 1997);
-            PrintStream ps = new PrintStream(client.getOutputStream());
-            ps.println(Double.toString(p.getMontant()));
-            ps.flush();
-            Scanner sc = new Scanner(client.getInputStream());
-            String response = sc.nextLine();
-            if(response.equals("ok")){
-                savePaiement(p);
-                // send the transaction's information to the Server
-                ObjectOutputStream objout = new ObjectOutputStream(client.getOutputStream());
-                objout.writeObject(transaction);
-                objout.flush();
-            }else{
-                forms.shout("Sold insuffisant !!");
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
+    public void sendPaiement(Paiement p) throws Exception {
+        Transaction transaction = new Transaction(1, p, p.getDate());
+
+        PrintStream ps = new PrintStream(this.client.getOutputStream());
+        ps.println(Double.toString(p.getMontant()));
+        ps.flush();
+        Scanner sc = new Scanner(this.client.getInputStream());
+        String response = sc.nextLine();
+        if (response.equals("ok")) {
+            savePaiement(p);
+            // send the transaction's information to the Server
+            ObjectOutputStream objout = new ObjectOutputStream(this.client.getOutputStream());
+            objout.writeObject(transaction);
+            objout.flush();
+            String msg = sc.nextLine();
+            forms.shout("Votre paiement en ligne à été procédé avec succès.\n" + msg);
+        } else {
+            forms.shout("Sold insuffisant !!");
         }
     }
 
@@ -328,9 +348,9 @@ public class IHM extends Application {
                     Paiement rowData = row.getItem();
                     idTextField.setText(rowData.getId() + "");
                     montantTextField.setText(rowData.getMontant() + "");
-                    dateTextField.setText(rowData.getDate());
+                    dateTextField.setValue(LocalDate.parse(rowData.getDate(), formatter));
                     proprietaireTextField.setText(rowData.getProprietaire());
-                    dateEffetTextField.setText(rowData.getDateEffet());
+                    dateEffetTextField.setValue(LocalDate.parse(rowData.getDateEffet(), formatter));
                     typesBox.setValue(rowData.getType());
                 }
             });
@@ -338,49 +358,57 @@ public class IHM extends Application {
         });
 
         addButton.setOnAction(e -> {
-            if(! forms.isEmptyFields(dateTextField, dateEffetTextField, proprietaireTextField, montantTextField) && typesBox.getValue() != null){
+            if (dateEffetTextField.getValue()!=null && dateTextField.getValue() != null && !forms.isEmptyFields(proprietaireTextField, montantTextField) && typesBox.getValue() != null) {
                 double paid, total, montant;
                 paid = Double.parseDouble(paidValueLabel.getText());
                 total = Double.parseDouble(totalValueLabel.getText());
                 montant = Double.parseDouble(montantTextField.getText());
-                if(paid < total){
-                    if((montant + paid) <= total ){
+                if (paid < total) {
+                    if ((montant + paid) <= total) {
                         Paiement p = new Paiement(
                                 (new VenteDAOIMPL()).find(Integer.parseInt(idVenteTextField.getText())),
                                 Double.parseDouble(montantTextField.getText()),
-                                dateTextField.getText(),
+                                dateTextField.getValue().format(formatter),
                                 proprietaireTextField.getText(),
-                                dateEffetTextField.getText(),
+                                dateEffetTextField.getValue().format(formatter),
                                 typesBox.getSelectionModel().getSelectedItem()
                         );
-                        if(typesBox.getSelectionModel().getSelectedItem().getName().equals("Online")){
-                            sendPaiement(p);
-                        }else{
+                        if (typesBox.getSelectionModel().getSelectedItem().getName().equals("Online")) {
+                            if(this.serverState){
+                                try {
+                                    sendPaiement(p);
+                                } catch (Exception ex) {
+                                    this.serverState = false;
+                                }
+                            }else{
+                                forms.shout("Le serveur de banque est désactivé!!");
+                            }
+                        } else {
                             savePaiement(p);
                         }
-                    }else{
+                    } else {
                         forms.shout("Vous avez dépassé le montant total de la vente!");
                     }
-                }else{
+                } else {
                     forms.shout("Cette vente est déja réglé");
                 }
-            }else{
+            } else {
                 forms.shout("Merci de remplir tous les champs");
             }
         });
 
         editButton.setOnAction(e -> {
-            if(! forms.isEmptyFields(idTextField, dateTextField, dateEffetTextField, montantTextField, proprietaireTextField) && typesBox.getValue() != null){
+            if (dateEffetTextField.getValue()!=null && dateTextField.getValue() != null && !forms.isEmptyFields(idTextField, montantTextField, proprietaireTextField) && typesBox.getValue() != null) {
                 double paid, total, montant;
                 paid = Double.parseDouble(paidValueLabel.getText());
                 total = Double.parseDouble(totalValueLabel.getText());
                 montant = Double.parseDouble(montantTextField.getText());
-                if((montant + (paid - table.getSelectionModel().getSelectedItem().getMontant())) <= total ){
+                if ((montant + (paid - table.getSelectionModel().getSelectedItem().getMontant())) <= total) {
                     Paiement p = (new PaiementDAOIMPL()).find(Integer.parseInt(idTextField.getText()));
                     p.setMontant(Double.parseDouble(montantTextField.getText()));
-                    p.setDate(dateTextField.getText());
+                    p.setDate(dateTextField.getValue().format(formatter));
                     p.setProprietaire(proprietaireTextField.getText());
-                    p.setDateEffet(dateEffetTextField.getText());
+                    p.setDateEffet(dateEffetTextField.getValue().format(formatter));
                     p.setType(typesBox.getSelectionModel().getSelectedItem());
                     dao.update(p);
                     clearFields();
@@ -388,17 +416,17 @@ public class IHM extends Application {
                     this.statusLabel.getStyleClass().add("custom_message");
                     updateListItems();
                     initRest(paiements);
-                }else{
+                } else {
                     forms.shout("Vous avez dépassé le montant total de la vente!");
                 }
-            }else{
+            } else {
                 forms.shout("Merci de séléctionner un paiement et remplir tous les champs");
             }
         });
 
         deleteButton.setOnAction(e -> {
-            if(! forms.isEmptyFields(idTextField)){
-                if(forms.confirm("Êtes vous sûr de supprimer ce paiement?")){
+            if (!forms.isEmptyFields(idTextField)) {
+                if (forms.confirm("Êtes vous sûr de supprimer ce paiement?")) {
                     Paiement p = (new PaiementDAOIMPL()).find(Integer.parseInt(idTextField.getText()));
                     dao.delete(p);
                     clearFields();
@@ -407,18 +435,64 @@ public class IHM extends Application {
                     updateListItems();
                     initRest(paiements);
                 }
-            }else{
+            } else {
                 forms.shout("Merci de séléctionner un paiement à supprimer");
             }
         });
 
         primaryStage.setTitle("Gestion des paiements");
-        
+
         scene.getStylesheets().add("style.css");
+
+        setServerState(false);
 
         primaryStage.setScene(scene);
 
         primaryStage.show();
+
+    }
+
+    static class MyThread extends Thread {
+        Socket socket = null;
+
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    sleep(2000);
+                    if (socket != null)
+                        continue;
+                    socket = new Socket("localhost", 1997);
+                    if (serverDetected != null)
+                        serverDetected.onReceive(socket);
+                } catch (Exception e) {
+                    serverDetected.onReceive(null);
+                }
+            }
+        }
+
+        public void setServerDetected(OnServerDetected serverDetected) {
+            this.serverDetected = serverDetected;
+        }
+
+        public Socket getSocket() {
+            return socket;
+        }
+
+        public void setSocket(Socket socket) {
+            this.socket = socket;
+        }
+
+        interface OnServerDetected {
+            void onReceive(Socket socket);
+        }
+
+        OnServerDetected serverDetected;
+    }
+
+    private void setServerState(boolean state) {
+        if (state) this.header.getStateLabel().setText("Le serveur est activé");
+        else this.header.getStateLabel().setText("Le serveur est désactivé");
 
     }
 

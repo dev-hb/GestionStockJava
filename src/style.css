@@ -94,3 +94,8 @@
     -fx-font-size: 22px;
     -fx-font-weight: bold;
 }
+
+.server_state {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 20px;
+}

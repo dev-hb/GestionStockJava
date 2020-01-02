@@ -31,7 +31,6 @@ public class Server extends Thread {
         ps.flush();
         if(amount <= this.account.getSold()){
             this.account.setSold( this.account.getSold() - amount );
-            System.out.println("Il vous reste " + this.account.getSold() + " Dh dans votre compte.");
             return true;
         } return false;
     }
@@ -40,12 +39,16 @@ public class Server extends Thread {
     public void run(){
         try {
             server = serverSocket.accept();
-            System.out.println("A payement attemption has been detected!");
             account = new Account(1, new Bank(1, "CIH Bank"), 1000);
             while (true){
+                System.out.println("Waiting for payement requests...");
                 if(verifySold()){
+                    System.out.println("A payement attemption has been detected!");
                     Transaction transaction = getTransaction();
                     saveTransaction(transaction);
+                    PrintStream ps = new PrintStream(this.server.getOutputStream());
+                    ps.println("Il vous reste " + this.account.getSold() + " Dh dans votre compte.");
+                    ps.flush();
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -55,6 +58,11 @@ public class Server extends Thread {
 
     private void saveTransaction(Transaction transaction) {
         (new TransactionDAOIMPL()).create(transaction);
+    }
+
+    public void startFromOutside() throws IOException {
+        Server server = new Server(1997);
+        server.start();
     }
 
     public static void main(String[] args) throws IOException {
