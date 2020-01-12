@@ -80,6 +80,7 @@ public class IHM extends Application {
     TableColumn<Vente, String> nameColumn;
     TableColumn<Vente, String> dateColumn;
     TableColumn<Vente, Double> totalColumn;
+    TableColumn<Vente, String> etatColumn;
     /// pour ligneTable
     TableColumn<LigneVente, Integer> idLigneColumn;
     TableColumn<LigneVente, Integer> produitLigneColumn;
@@ -127,6 +128,7 @@ public class IHM extends Application {
         nameColumn = new TableColumn<>("Nom Complet");
         dateColumn = new TableColumn<>("Date");
         totalColumn = new TableColumn<>("Total");
+        etatColumn = new TableColumn<>("Etat");
 
         idLigneColumn = new TableColumn<>("Id");
         produitLigneColumn = new TableColumn<>("Produit");
@@ -250,9 +252,10 @@ public class IHM extends Application {
         this.nameColumn.setCellValueFactory(new PropertyValueFactory<>("client"));
         this.dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
         this.totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
+        this.etatColumn.setCellValueFactory(new PropertyValueFactory<>("etat"));
 
         this.table.setItems(listOfVentes);
-        table.getColumns().addAll(idColumn, nameColumn, dateColumn, totalColumn);
+        table.getColumns().addAll(idColumn, nameColumn, dateColumn, totalColumn, etatColumn);
 
         this.idLigneColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         this.produitLigneColumn.setCellValueFactory(new PropertyValueFactory<>("produit"));

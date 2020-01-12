@@ -130,4 +130,19 @@ public class PaiementDAOIMPL implements PaiementDAO {
         return null;
     }
 
+    public double getTotal(int id){
+        try{
+            String url = "SELECT sum(montant) as mt FROM paiement WHERE id_vente = ?";
+            pstm = dc.conn.prepareStatement(url);
+            pstm.setInt(1, id);
+            ResultSet rs = pstm.executeQuery();
+            rs.next();
+            return rs.getDouble("mt");
+            //return rs.getDouble("mt");
+        }catch (SQLException es){
+            es.printStackTrace();
+        }
+        return 0;
+    }
+
 }

@@ -10,6 +10,7 @@ public class Vente implements Serializable {
     private Client client;
     private String date;
     private double total;
+    private String etat;
 
     public Vente(int id, Client client, String date) {
         this.id = id;
@@ -48,5 +49,12 @@ public class Vente implements Serializable {
     public void setTotal(double total){
         this.total = total;
     }
-    
+
+    public String getEtat() {
+        return etat;
+    }
+
+    public void setEtat(String etat) {
+        this.etat = etat;
+    }
 }
